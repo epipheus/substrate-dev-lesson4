@@ -276,6 +276,10 @@ impl pallet_kitties::Config for Runtime {
 	type Event = Event;
 }
 
+impl pallet_ponies::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -295,6 +299,7 @@ construct_runtime!(
 		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
 		// Substrate Kitties pallet
 		Kitties: pallet_kitties::{Pallet, Storage, Event<T>},
+		Ponies: pallet_ponies::{Pallet, Storage},
 	}
 );
 

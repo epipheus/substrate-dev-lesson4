@@ -3681,6 +3681,7 @@ dependencies = [
  "pallet-balances",
  "pallet-grandpa",
  "pallet-kitties",
+ "pallet-ponies",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-template",
@@ -3921,6 +3922,18 @@ dependencies = [
 
 [[package]]
 name = "pallet-kitties"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-randomness-collective-flip",
+ "parity-scale-codec",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-ponies"
 version = "0.1.0"
 dependencies = [
  "frame-support",

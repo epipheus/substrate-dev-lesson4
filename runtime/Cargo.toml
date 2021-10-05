@@ -54,6 +54,7 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
 	'pallet-kitties/std',
+    'pallet-ponies/std',
 ]
 [dependencies.codec]
 default-features = false
@@ -141,6 +142,10 @@ version = '3.0.0'
 [dependencies.pallet-kitties]
 default-features = false
 path = '../pallets/kitties'
+
+[dependencies.pallet-ponies]
+default-features = false
+path = '../pallets/ponies'
 
 [dependencies.pallet-timestamp]
 default-features = false

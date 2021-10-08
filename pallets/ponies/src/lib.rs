@@ -69,9 +69,9 @@ pub mod pallet {
 
             // Create and store pony
             let pony = Pony(dna);
-            let pony_id = Self::next_pony_id();
+            let mut pony_id = Self::next_pony_id();
             Ponies::<T>::insert(&sender, pony_id, pony.clone());
-            NextPonyId::<T>::put(pony_id + 1);
+            NextPonyId::<T>::put(pony_id.checked_add(1).ok_or(ArithmeticError::Overflow).unwrap());
 
             // Emit event
             Self::deposit_event(Event::PonyCreated(sender,pony_id, pony));

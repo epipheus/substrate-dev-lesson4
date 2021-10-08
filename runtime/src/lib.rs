@@ -299,7 +299,7 @@ construct_runtime!(
 		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
 		// Substrate Kitties pallet
 		Kitties: pallet_kitties::{Pallet, Storage, Event<T>},
-		Ponies: pallet_ponies::{Pallet, Storage},
+		Ponies: pallet_ponies::{Pallet, Storage, Event<T>},
 	}
 );
 

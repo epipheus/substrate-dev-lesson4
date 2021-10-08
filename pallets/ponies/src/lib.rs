@@ -25,7 +25,7 @@ pub mod pallet {
     }
 
     /// Store all the ponies. Key is (user,pony_id)
-    #[pallet_storage]
+    #[pallet::storage]
     #[pallet::getter(fn ponies)]
     pub type Ponies<T:Config> = StorageDoubleMap<
         _,
@@ -40,7 +40,7 @@ pub mod pallet {
     pub type NextPonyId<T: Config> = StorageValue<_,u32,ValueQuery>;
 
     #[pallet::event]
-    #[pallet::gemnerate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
         /// A pony is created \[owner, pony_id, pony\]
@@ -65,7 +65,7 @@ pub mod pallet {
                 &sender,
                 <frame_system::Pallet<T>>::extrinsic_index(),
             );
-            let dna = palyoad.using_encoded(blake2_128);
+            let dna = payload.using_encoded(blake2_128);
 
             // Create and store pony
             let pony = Pony(dna);

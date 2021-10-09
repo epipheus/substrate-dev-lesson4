@@ -14,6 +14,19 @@ pub use pallet::*;
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
 pub struct Pony(pub [u8; 16]);
 
+#[derive(Encode, Decode, Clone, Copy, RuntimeDebug, PartialEq, Eq)]
+pub enum PonyGender{
+    Male,
+    Female
+}
+
+impl Pony {
+    pub fn gender(&self) -> PonyGender {
+        if self.0[0] % 2 == 0 { PonyGender::Male }
+        else { PonyGender::Female }
+    }
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -59,24 +72,28 @@ pub mod pallet {
         pub fn create(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            // Generate random 128bit value
-            let payload = (
-                <pallet_randomness_collective_flip::Pallet<T> as Randomness<T::Hash, T::BlockNumber>>::random_seed().0,
-                &sender,
-                <frame_system::Pallet<T>>::extrinsic_index(),
-            );
-            let dna = payload.using_encoded(blake2_128);
+            NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
+                let current_id = *next_id;
 
-            // Create and store pony
-            let pony = Pony(dna);
-            let mut pony_id = Self::next_pony_id();
-            Ponies::<T>::insert(&sender, pony_id, pony.clone());
-            NextPonyId::<T>::put(pony_id.checked_add(1).ok_or(ArithmeticError::Overflow).unwrap());
+                // Generate random 128bit value
+                let payload = (
+                    <pallet_randomness_collective_flip::Pallet<T> as Randomness<T::Hash, T::BlockNumber>>::random_seed().0,
+                    &sender,
+                    <frame_system::Pallet<T>>::extrinsic_index(),
+                );
+                let dna = payload.using_encoded(blake2_128);
 
-            // Emit event
-            Self::deposit_event(Event::PonyCreated(sender,pony_id, pony));
-
-            Ok(())
+                // Create and store pony
+                let pony = Pony(dna);
+                // let pony_id = Self::next_pony_id();
+                Ponies::<T>::insert(&sender, current_id, pony.clone());
+                // NextPonyId::<T>::put(pony_id.clone().checked_add(1).ok_or(ArithmeticError::Overflow).unwrap());
+                // Emit event
+                Self::deposit_event(Event::PonyCreated(sender,current_id, pony));
+                Ok(())
+            })
         }
+
+
     }
 }

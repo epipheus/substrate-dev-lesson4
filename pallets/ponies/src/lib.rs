@@ -81,16 +81,8 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
 
             NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
-                let current_id = *next_id;
-                *next_id = next_id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
-
-                // Generate random 128bit value
-                let payload = (
-                    <pallet_randomness_collective_flip::Pallet<T> as Randomness<T::Hash, T::BlockNumber>>::random_seed().0,
-                    &sender,
-                    <frame_system::Pallet<T>>::extrinsic_index(),
-                );
-                let dna = payload.using_encoded(blake2_128);
+                let current_id = Self::get_next_pony_id()?;
+                let dna = Self::random_value();
 
                 // Create and store pony
                 let pony = Pony(dna);
@@ -122,6 +114,10 @@ pub mod pallet {
             for i in 0..pony1_dna.len() {
                 new_dna[i] = combine_dna(pony2_dna[i], pony2_dna[i], selector[i]);
             }
+
+            let new_pony = Pony(new_dna);
+            Ponies::<T>::insert(&sender, pony_id, &new_pony);
+            Self::deposit_event(Event::PonyBred(sender, pony_id, new_pony));
             OK(())
         }
     }

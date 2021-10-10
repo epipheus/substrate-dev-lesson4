@@ -1,7 +1,5 @@
 #![cfg_attr(not(feature = "std"),no_std)]
 
-// go back to 41:16 also 35:27 double check everything
-
 use frame_support::{
     pallet_prelude::*,
     traits::Randomness,
@@ -9,6 +7,8 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::ArithmeticError;
 use sp_io::hashing::blake2_128;
+use sp_std::result::Result;
+
 pub use pallet::*;
 
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
@@ -57,7 +57,15 @@ pub mod pallet {
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
         /// A pony is created \[owner, pony_id, pony\]
-        PonyCreated(T::AccountId, u32, Pony)
+        PonyCreated(T::AccountId, u32, Pony),
+        PonyBred(T::AccountId,u32,Pony),
+    }
+
+    #[pallet::error]
+    pub enum Error<T> {
+        InvalidPonyId,
+        SameGender,
+        NoChemistry,
     }
 
     #[pallet::pallet]
@@ -74,6 +82,7 @@ pub mod pallet {
 
             NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
                 let current_id = *next_id;
+                *next_id = next_id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
 
                 // Generate random 128bit value
                 let payload = (
@@ -94,6 +103,50 @@ pub mod pallet {
             })
         }
 
+        #[pallet::weight(1000)]
+        pub fn breed(origin: OriginFor<T>, pony_id_1: u32, pony_id_2: u32) -> DispatchResult {
+            let sender  = ensure_signed(origin)?;
+            let pony1   = Self::ponies(&sender,pony_id_1).ok_or(Error::<T>::InvalidPonyId)?;
+            let pony2   = Self::ponies(&sender,pony_id_2).ok_or(Error::<T>::InvalidPonyId)?;
 
+            ensure!(pony1.gender() != pony2.gender(), Error::<T>::SameGender);
+            let pony_id = Self::get_next_pony_id();
+
+            let pony1_dna = pony1.0;
+            let pony2_dna = pony2.0;
+
+            let selector = Self::random_value(&sender);
+            let mut new_dna = [0u8;16];
+
+            // Combine parents and selector to make a new pony
+            for i in 0..pony1_dna.len() {
+                new_dna[i] = combine_dna(pony2_dna[i], pony2_dna[i], selector[i]);
+            }
+            OK(())
+        }
+    }
+}
+
+fn combine_dna(dna1: u8, dna2: u8, selector: u8) -> u8 {
+    (dna1 & !selector) | (dna2 & selector)
+}
+
+impl<T: Config> Pallet<T> {
+    fn get_next_pony_id() -> Result<u32,DispatchError> {
+        NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
+            let current_id = *next_id;
+            *next_id = next_id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
+            OK(current_id)
+        }
+    }
+
+    fn random_value(sender: &T::AccountId) -> [u8; 16] {
+        // Generate a random 128-bit value
+        let payload = (
+            <pallet_randomness_collective_flip::Pallet<T> as Randomness<T::Hash, T::BlockNumber>>::random_seed().0,
+            &sender,
+            <frame_system::Pallet<T>>::extrinsic_index(),
+        );
+        payload.using_encoded(blake2_128)
     }
 }

@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"),no_std)]
 
-// so far at 11:16
+// so far at 19:06
 
 use frame_support::{
     pallet_prelude::*,
@@ -12,6 +12,9 @@ use sp_io::hashing::blake2_128;
 use sp_std::result::Result;
 
 pub use pallet::*;
+
+#[cfg(test)]
+mod tests;
 
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
 pub struct Pony(pub [u8; 16]);

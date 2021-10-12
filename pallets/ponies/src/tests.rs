@@ -7,15 +7,15 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup}, testing::Header,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Teast>;
-type Block = frame_system::mocking::MockBLock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // config mock runtime
 frame_support::construct_runtime!(
     pub enum Test where
         Block = Block,
-        NodeBLock = Block,
-        UncheckedExtrinsic = UncheckExtrinsic,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
@@ -28,7 +28,7 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
     type BaseCallFilter = ();
     type BlockWeights = ();
     type BlockLength = ();
@@ -62,7 +62,7 @@ impl Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t: system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+    let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
     t.execute_with(|| System::set_block_number(1));
     t
 }
@@ -73,16 +73,16 @@ fn can_create() {
         assert_ok!(PoniesModule::create(Origin::signed(100)));
         let pony = Pony([59, 250, 138, 82, 209, 39, 141, 109, 163, 238, 183, 145, 235, 168, 18, 122]);
 
-        assert_eql!(PoniesModule::ponies(100,0), Some(pony.clone()));
-        assert_eql!(PoniesModule::next_pony_id(),1);
+        assert_eq!(PoniesModule::ponies(100,0), Some(pony.clone()));
+        assert_eq!(PoniesModule::next_pony_id(),1);
 
-        System::assert_last_event(Event::PoniesModule(crate::Event::<Test>::PoniesCreated(100,0,pony)));
+        System::assert_last_event(Event::PoniesModule(crate::Event::<Test>::PonyCreated(100,0,pony)));
     });
 }
 
 #[test]
 fn gender() {
-    assert_eq!(Pony[0;16].gender(), PonyGender::Male);
+    assert_eq!(Pony([0; 16]).gender(), PonyGender::Male);
     assert_eq!(Pony([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]).gender(),PonyGender::Female);
 }
 
@@ -105,5 +105,5 @@ fn can_breed() {
         assert_eq!(PoniesModule::next_pony_id(), 3);
 
         System::assert_last_event(Event::PoniesModule(crate::Event::<Test>::PonyBred(100u64, 2u32, pony)));
-    }
+    })
 }

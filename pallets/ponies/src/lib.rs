@@ -35,7 +35,6 @@ impl Pony {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::sp_runtime::app_crypto::sp_core::blake2_128;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_randomness_collective_flip::Config {
@@ -85,9 +84,9 @@ pub mod pallet {
         pub fn create(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
 
-            NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
+            NextPonyId::<T>::try_mutate(|_next_id| -> DispatchResult {
                 let current_id = Self::get_next_pony_id()?;
-                let dna = Self::random_value();
+                let dna = Self::random_value(&sender);
 
                 // Create and store pony
                 let pony = Pony(dna);
@@ -107,23 +106,23 @@ pub mod pallet {
             let pony2   = Self::ponies(&sender,pony_id_2).ok_or(Error::<T>::InvalidPonyId)?;
 
             ensure!(pony1.gender() != pony2.gender(), Error::<T>::SameGender);
-            let pony_id = Self::get_next_pony_id();
+            let pony_id = Self::get_next_pony_id().unwrap();
 
             let pony1_dna = pony1.0;
             let pony2_dna = pony2.0;
 
             let selector = Self::random_value(&sender);
-            let mut new_dna = [0u8;16];
+            let mut new_dna = [0u8; 16];
 
             // Combine parents and selector to make a new pony
             for i in 0..pony1_dna.len() {
-                new_dna[i] = combine_dna(pony2_dna[i], pony2_dna[i], selector[i]);
+                new_dna[i] = combine_dna(pony1_dna[i], pony2_dna[i], selector[i]);
             }
 
             let new_pony = Pony(new_dna);
             Ponies::<T>::insert(&sender, pony_id, &new_pony);
             Self::deposit_event(Event::PonyBred(sender, pony_id, new_pony));
-            OK(())
+            Ok(())
         }
     }
 }
@@ -134,11 +133,11 @@ fn combine_dna(dna1: u8, dna2: u8, selector: u8) -> u8 {
 
 impl<T: Config> Pallet<T> {
     fn get_next_pony_id() -> Result<u32,DispatchError> {
-        NextPonyId::<T>::try_mutate(|next_id| -> DispatchResult {
+        NextPonyId::<T>::try_mutate(|next_id| -> Result<u32, DispatchError> {
             let current_id = *next_id;
             *next_id = next_id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
-            OK(current_id)
-        }
+            Ok(current_id)
+        })
     }
 
     fn random_value(sender: &T::AccountId) -> [u8; 16] {

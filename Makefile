@@ -8,13 +8,13 @@ toolchain:
 	./scripts/init.sh
 
 build:
-	cargo build
+	CARGO_INCREMENTAL=0 cargo build
 
 check:
-	SKIP_WASM_BUILD= cargo check --all --tests
+	CARGO_INCREMENTAL=0 SKIP_WASM_BUILD= cargo check --all --tests
 
 test:
-	SKIP_WASM_BUILD= cargo test --all
+	CARGO_INCREMENTAL=0 SKIP_WASM_BUILD= cargo test --all
 
 purge:
 	cargo run -- purge-chain --dev -y

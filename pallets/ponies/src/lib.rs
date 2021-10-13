@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"),no_std)]
 
-// so far at 19:06
+// so far at 20:25 of video
 
 use frame_support::{
     pallet_prelude::*,
@@ -83,20 +83,16 @@ pub mod pallet {
         #[pallet::weight(1000)]
         pub fn create(origin: OriginFor<T>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
+            let pony_id = Self::get_next_pony_id()?;
+            let dna = Self::random_value(&sender);
 
-            NextPonyId::<T>::try_mutate(|_next_id| -> DispatchResult {
-                let current_id = Self::get_next_pony_id()?;
-                let dna = Self::random_value(&sender);
+            let pony = Pony(dna);                                   // create pony
+            Ponies::<T>::insert(&sender, pony_id, &pony); // store pony
 
-                // Create and store pony
-                let pony = Pony(dna);
-                // let pony_id = Self::next_pony_id();
-                Ponies::<T>::insert(&sender, current_id, pony.clone());
-                // NextPonyId::<T>::put(pony_id.clone().checked_add(1).ok_or(ArithmeticError::Overflow).unwrap());
-                // Emit event
-                Self::deposit_event(Event::PonyCreated(sender,current_id, pony));
-                Ok(())
-            })
+            // Emit event
+            Self::deposit_event(Event::PonyCreated(sender,pony_id, pony));
+
+            Ok(())
         }
 
         #[pallet::weight(1000)]
@@ -106,7 +102,7 @@ pub mod pallet {
             let pony2   = Self::ponies(&sender,pony_id_2).ok_or(Error::<T>::InvalidPonyId)?;
 
             ensure!(pony1.gender() != pony2.gender(), Error::<T>::SameGender);
-            let pony_id = Self::get_next_pony_id().unwrap();
+            let pony_id = Self::get_next_pony_id()?;
 
             let pony1_dna = pony1.0;
             let pony2_dna = pony2.0;
